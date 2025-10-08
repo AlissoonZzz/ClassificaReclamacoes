@@ -6,10 +6,10 @@ Este projeto implementa um sistema de backend para processar reclamações de cl
 
 O fluxo principal é assíncrono, baseado no padrão **Produtor-Consumidor**:
 
-1.  A **API (Produtor)** recebe a reclamação, a valida e a publica em uma fila de mensagens.
-2.  Um **Worker (Consumidor)**, rodando em um processo separado, consome a mensagem da fila, executa a lógica de negócio (classificação, etc.) e salva o resultado.
+1.  A **API (Produtor)** recebe a reclamação, a valida e a publica em uma fila de mensagens (RabbitMQ).
+2.  Um **Worker (Consumidor)**, rodando em um processo separado, consome a mensagem da fila, executa a lógica de negócio (classificação por palavras-chave) e salva o resultado em um repositório em memória.
 
-Essa arquitetura desacopla a API do processamento pesado, permitindo que o sistema lide com altos volumes de requisições sem degradar o tempo de resposta da API.
+Essa arquitetura desacopla a API do processamento pesado, permitindo que o sistema lide com altos volumes de requisições sem degradar o tempo de resposta.
 
 ## 2. Tecnologias Utilizadas
 
@@ -21,29 +21,18 @@ Essa arquitetura desacopla a API do processamento pesado, permitindo que o siste
 - **Validação de Dados:** Pydantic
 - **Testes:** Pytest
 
-## 3. Como Executar o Projeto
+## 3. Como Executar o Projeto com Docker Compose
 
-1.  **Pré-requisito:** Ter o Docker instalado e rodando.
-2.  **Iniciar o RabbitMQ:**
+1.  **Pré-requisito:** Ter Docker e Docker Compose instalados.
+2.  Abra um terminal na raiz do projeto e execute:
     ```bash
-    docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-management
+    docker-compose up --build
     ```
-3.  **Instalar Dependências:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Iniciar a API (Terminal 1):**
-    ```bash
-    python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-    ```
-5.  **Iniciar o Worker (Terminal 2):**
-    ```bash
-    python worker.py
-    ```
+3.  A aplicação estará disponível em `http://localhost:8000`.
 
 ## 4. Como Rodar os Testes
 
-Com as dependências instaladas, execute o seguinte comando na raiz do projeto:
+Com as dependências instaladas (`pip install -r requirements.txt`), execute o seguinte comando na raiz do projeto:
 
 ```bash
 python -m pytest
@@ -53,37 +42,27 @@ python -m pytest
 
 ```
 .
-├── app/
-│   └── ... (código da aplicação)
-├── tests/
+├── app/                 # Contém todo o código fonte da aplicação
+│   ├── api/             # Camada de API (endpoints)
+│   ├── application/     # Lógica de aplicação (casos de uso, serviços)
+│   ├── domain/          # Entidades e regras de negócio centrais
+│   └── infrastructure/  # Implementações de baixo nível (fila, repositórios)
+├── tests/               # Contém os testes automatizados
 │   ├── api/
-│   │   └── test_reclamacoes_api.py
 │   └── unit/
-│       └── test_classification_service.py
-├── classificador.py
-├── requirements.txt
-├── worker.py
-└── DOCUMENTACAO.md
+├── Dockerfile           # Receita para construir a imagem da aplicação
+├── docker-compose.yml   # Orquestra os contêineres da aplicação
+├── requirements.txt     # Dependências Python
+└── worker.py            # Ponto de entrada para o processo consumidor
 ```
 
-## 6. Análise dos Arquivos
+## 6. Análise dos Arquivos Principais
 
-(As seções anteriores de análise de arquivos permanecem as mesmas)
-
----
-
-### `tests/unit/test_classification_service.py`
-
--   **Propósito:** Testa a unidade de lógica de negócio mais pura do sistema: o serviço de classificação. 
--   **Estratégia:** Como este serviço é uma classe sem dependências externas, podemos instanciá-lo diretamente e testar seu método `classificar()` com diferentes entradas de texto, verificando se a saída (a lista de categorias) é a esperada. Cobre casos de match simples, múltiplo, nenhum match e case-insensitivity.
-
----
-
-### `tests/api/test_reclamacoes_api.py`
-
--   **Propósito:** Testa os endpoints da API, garantindo que a interface externa do sistema funcione corretamente.
--   **Estratégia:**
-    -   Usa o `TestClient` do FastAPI para fazer requisições HTTP à aplicação sem a necessidade de um servidor real.
-    -   Usa **Mocks** (`unittest.mock.patch`) para isolar a API de suas dependências externas (a fila e o repositório). 
-    -   No teste `POST`, verificamos se o endpoint responde com `202 Accepted` e, crucialmente, se ele chama o método `publish` da fila com os dados corretos.
-    -   No teste `GET`, simulamos um retorno do repositório e verificamos se a API formata e entrega esses dados corretamente.
+- **`docker-compose.yml`**: Define os três serviços principais (`rabbitmq`, `api`, `worker`), suas imagens, portas e como eles se conectam.
+- **`Dockerfile`**: Constrói a imagem Python para os serviços `api` e `worker`, instalando as dependências a partir do `requirements.txt`.
+- **`app/main.py`**: Ponto de entrada da API FastAPI, onde os roteadores são incluídos.
+- **`app/api/v1/endpoints/reclamacoes.py`**: Define os endpoints `/reclamacoes` (POST e GET), incluindo a camada de segurança com chave de API.
+- **`worker.py`**: O processo consumidor que escuta a fila do RabbitMQ, recebe as reclamações e dispara o caso de uso para processá-las.
+- **`app/application/use_cases/processar_reclamacao.py`**: Orquestra as etapas de uma reclamação: cria a entidade, chama o serviço de classificação e salva no repositório.
+- **`app/application/services/keyword_classification_service.py`**: Implementa a lógica de classificação baseada em uma lista de palavras-chave.
+- **`app/domain/models.py`**: Define as estruturas de dados centrais (Pydantic models) como `Reclamacao`, `Canal` e `Status`.
