@@ -22,7 +22,6 @@ class KeywordClassificationService:
         
         return sorted(list(categorias_encontradas))
 
-# --- Configuração das Categorias --- 
 # Em uma aplicação real, isso viria de um banco de dados ou arquivo de configuração.
 categorias_config = {
     "imobiliário": ["credito imobiliario", "casa", "apartamento"],

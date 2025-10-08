@@ -5,7 +5,6 @@ import os
 
 class RabbitMQQueue:
     def __init__(self, queue_name='reclamacoes_queue'):
-        # Conecta ao host definido na variável de ambiente, ou usa 'localhost' se não estiver definida.
         self._host = os.environ.get("RABBITMQ_HOST", "localhost")
         self._queue_name = queue_name
 
