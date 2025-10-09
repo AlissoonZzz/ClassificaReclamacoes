@@ -39,7 +39,8 @@ def main():
             print(f"ERRO: Falha ao processar mensagem: {e}")
             ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
 
-    queue.start_consuming(callback)
+    while True:
+        queue.start_consuming(callback)
 
 if __name__ == "__main__":
     main()

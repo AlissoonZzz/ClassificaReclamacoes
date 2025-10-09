@@ -28,9 +28,9 @@ services:
   worker:
     build: .
     container_name: worker
-    command: python worker.py
     environment:
       - RABBITMQ_HOST=rabbitmq
+      - PYTHONUNBUFFERED=1
     depends_on:
       rabbitmq:
         condition: service_healthy

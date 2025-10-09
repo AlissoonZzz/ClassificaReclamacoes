@@ -12,7 +12,8 @@ client = TestClient(app)
 
 def test_criar_reclamacao_endpoint():
     """Testa o endpoint de criação de reclamação (POST /api/v1/reclamacoes/)."""
-    with patch("app.api.v1.endpoints.reclamacoes.queue_instance") as mock_queue:
+    with patch("app.api.v1.endpoints.reclamacoes.RabbitMQQueue") as MockRabbitMQQueue:
+        mock_queue_instance = MockRabbitMQQueue.return_value
         test_payload = {"texto": "meu app deu erro", "canal": "digital"}
         
         # Envia a requisição com o cabeçalho de autenticação
@@ -20,7 +21,7 @@ def test_criar_reclamacao_endpoint():
         
         assert response.status_code == 202
         assert response.json() == {"message": "Reclamação recebida e enfileirada para processamento."}
-        mock_queue.publish.assert_called_once_with({"texto": "meu app deu erro", "canal": "digital"})
+        mock_queue_instance.publish.assert_called_once_with({"texto": "meu app deu erro", "canal": "digital"})
 
 def test_listar_reclamacoes_endpoint():
     """Testa o endpoint que lista as reclamações (GET /api/v1/reclamacoes/)."""
