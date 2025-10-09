@@ -26,8 +26,8 @@ A solução implementada é um sistema assíncrono que utiliza o padrão **Produ
 ```mermaid
 graph TD
     subgraph "Canais de Entrada"
-        A[Canal Digital / Sites]
-        B[Canal Físico (Digitalizado)]
+        A["Canal Digital / Sites"]
+        B["Canal Físico (Digitalizado)"]
     end
 
     subgraph "Sistema de Processamento"
