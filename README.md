@@ -25,21 +25,24 @@ A solução implementada é um sistema assíncrono que utiliza o padrão **Produ
 
 ```mermaid
 graph TD
-    subgraph "Cliente"
-        A[Usuário via API]
+    subgraph "Canais de Entrada"
+        A[Canal Digital / Sites]
+        B[Canal Físico (Digitalizado)]
     end
 
-    subgraph "Serviços do Projeto"
-        A --"POST /reclamacoes"--> B(API - FastAPI)
-        B --"Publica Mensagem"--> C{Fila - RabbitMQ}
-        C --"Consome Mensagem"--> D(Worker)
-        D --"Salva Resultado"--> E[(Repositório em Memória)]
+    subgraph "Sistema de Processamento"
+        A -- "POST /reclamacoes" --> C(API - FastAPI)
+        B -- "Envio via API" --> C
+        C -- "Publica Mensagem" --> D{Fila - RabbitMQ}
+        D -- "Consome Mensagem" --> E(Worker)
+        E -- "Salva Resultado" --> F[(Repositório)]
     end
 
-    A ~~~ B
-    B ~~~ C
-    C ~~~ D
-    D ~~~ E
+    subgraph "Sistemas Externos"
+        G[Sistema Legado]
+    end
+
+    E -- "Envia Dados" --> G
 ```
 
 1.  **API (Produtor):** Um endpoint FastAPI recebe a reclamação, valida os dados e a publica em uma fila RabbitMQ. A resposta para o cliente é imediata.
