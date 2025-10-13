@@ -28,6 +28,7 @@ services:
   worker:
     build: .
     container_name: worker
+    command: python worker.py
     environment:
       - RABBITMQ_HOST=rabbitmq
       - PYTHONUNBUFFERED=1

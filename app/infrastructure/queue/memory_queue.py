@@ -4,7 +4,6 @@ import json
 class MemoryQueue:
     """Uma fila em memória para simular um message broker como RabbitMQ."""
     def __init__(self):
-        # Usamos um deque que é otimizado para appends e pops em ambas as pontas
         self._queue = collections.deque()
 
     def publish(self, message: dict):
@@ -21,5 +20,5 @@ class MemoryQueue:
         print(f"INFO: Mensagem consumida da fila: {message}")
         return message
 
-# Instância da fila que será usada pela aplicação
+
 queue_instance = MemoryQueue()
